@@ -1,0 +1,7 @@
+POST http://blitzbier.local/setRoom
+content-type: application/json
+
+{
+    "name": "Room1",
+    "type": "kitchen"
+}

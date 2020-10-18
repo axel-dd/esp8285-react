@@ -1,0 +1,1 @@
+GET http://blitzbier.local/settings?signalStrength=true&chipInfo=true&amp;freeHeap=true
