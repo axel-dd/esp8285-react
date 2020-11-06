@@ -19,8 +19,9 @@ def createGzipHeaderFile(pathName):
 
     ba = bytearray(fhr.read())
     fileVarName =  Path(gzipPathName).name.replace('.','_').upper()
+    fhw.write(f'#define {fileVarName}_FILE "{Path(gzipPathName).name}"\n')
     fhw.write(f'#define {fileVarName}_SIZE {len(ba)}\n')
-    fhw.write(f'const uint8_t {fileVarName}[] PROGMEM = {{\n')
+    fhw.write(f'const uint8_t {fileVarName}_DATA[] PROGMEM = {{\n')
 
     byteColumn = 1
     for byte in ba:

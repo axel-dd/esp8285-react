@@ -1,4 +1,3 @@
-#include <ESP8266WiFi.h>
 #include "WifiClientService.h"
 #include <config.h>
 
