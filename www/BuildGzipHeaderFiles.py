@@ -5,44 +5,71 @@ import gzip
 import shutil
 from pathlib import Path
 
-def createGzipHeaderFile(pathName):
+Headers_h = Path('../src/WebServerFiles/Headers.h').resolve()
+FileRoutings_inl = Path('../src/WebServerFiles/FileRoutings.inl').resolve()
+
+def createGzipHeaderFiles(fileName, contentType):
     # gzip file
-    gzipPathName = pathName + '.gz'
-    headerPathName = str(Path(pathName).parent.parent / 'src' / (Path(gzipPathName).name + '.h'))
-    with open(pathName, 'rb') as f_in:
-        with gzip.open(gzipPathName, 'wb', compresslevel=9) as f_out:
+    gzipFileName = fileName + '.gz'
+    with open(fileName, 'rb') as f_in:
+        with gzip.open(gzipFileName, 'wb', compresslevel=9) as f_out:
             shutil.copyfileobj(f_in, f_out)
 
-    # build a C array from gzip compressed file
-    fhr = open(gzipPathName, 'rb')
-    fhw = open(headerPathName, 'w')
+    # build a C byte array from gzip compressed file
+    headerFileName = fileName + '.h'
+    headerPathAbs = Headers_h.parent / headerFileName
+    headerPathAbs.parent.mkdir(parents=True, exist_ok=True)
+    with open(gzipFileName, 'rb') as f_in:
+        with open(str(headerPathAbs), 'w') as f_out:
+            ba = bytearray(f_in.read())
 
-    ba = bytearray(fhr.read())
-    fileVarName =  Path(gzipPathName).name.replace('.','_').upper()
-    fhw.write(f'#define {fileVarName}_FILE "{Path(gzipPathName).name}"\n')
-    fhw.write(f'#define {fileVarName}_SIZE {len(ba)}\n')
-    fhw.write(f'const uint8_t {fileVarName}_DATA[] PROGMEM = {{\n')
+            fileVarName =  Path(fileName).as_posix().replace('/','__').replace('.','_').upper()
+            uri = '/'
+            if fileName.lower() != 'index.html':
+                uri += Path(fileName).as_posix()
 
-    byteColumn = 1
-    for byte in ba:
-        fhw.write(f"0x{byte:02x},")
-        if byteColumn > 10:
-            fhw.write('\n')
-            byteColumn = 1
-        else:
-            byteColumn += 1
+            f_out.write(f'#define {fileVarName}_URI "{uri}"\n')
+            f_out.write(f'#define {fileVarName}_TYPE "{contentType}"\n')
+            f_out.write(f'#define {fileVarName}_SIZE {len(ba)}\n')
+            f_out.write(f'const uint8_t {fileVarName}_DATA[] PROGMEM = {{\n')
 
-    fhw.seek(fhw.tell()-1, 0)
-    fhw.write('};')
+            bytesInLineWritten = 0
+            for byte in ba:
+                f_out.write(f"0x{byte:02x},")
+                bytesInLineWritten += 1
+                if bytesInLineWritten >= 10:
+                    f_out.write('\n')
+                    bytesInLineWritten = 0
 
-    fhr.close()
-    fhw.close()
-    os.remove(gzipPathName)
+            f_out.seek(f_out.tell()-1, 0)
+            f_out.write('};')
+
+    os.remove(gzipFileName)
+
+    # add include to new created header file
+    with open(Headers_h, 'a') as f:
+        f.write(f'#include "{str(Path(headerFileName).as_posix())}"\n')
+
+    # add file routing macro
+    with open(FileRoutings_inl, 'a') as f:
+        f.write(f'FILE_ROUTING({fileVarName})\n')
+
 
 def main():
-    fileTypes = glob('*.html') + glob('*.js')
-    for file in fileTypes:
-        createGzipHeaderFile(str(Path(file).resolve()))
+    # make files empty
+    with open(Headers_h, 'w') as f:
+        pass
+    with open(FileRoutings_inl, 'w') as f:
+        pass
+
+    # html files
+    for fileName in glob('**/*.html', recursive=True):
+        createGzipHeaderFiles(fileName, 'text/html')
+
+    # javascript files
+    for fileName in glob('**/*.js', recursive=True):
+        createGzipHeaderFiles(fileName, 'application/javascript')
+
 
 if __name__ == "__main__":
     main()
