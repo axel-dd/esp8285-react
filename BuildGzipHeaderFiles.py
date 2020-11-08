@@ -4,9 +4,11 @@ import os
 import gzip
 import shutil
 from pathlib import Path
+import re
 
-Headers_h = Path('../src/WebServerFiles/Headers.h').resolve()
-FileRoutings_inl = Path('../src/WebServerFiles/FileRoutings.inl').resolve()
+Headers_h = Path('src/WebServerFiles/Headers.h').resolve()
+FileRoutings_inl = Path('src/WebServerFiles/FileRoutings.inl').resolve()
+ReactAppDir = Path('www/build').resolve()
 
 def createGzipHeaderFiles(fileName, contentType):
     # gzip file
@@ -23,7 +25,7 @@ def createGzipHeaderFiles(fileName, contentType):
         with open(str(headerPathAbs), 'w') as f_out:
             ba = bytearray(f_in.read())
 
-            fileVarName =  Path(fileName).as_posix().replace('/','__').replace('.','_').upper()
+            fileVarName = re.compile('[^a-zA-Z0-9]').sub('_', fileName).upper()
             uri = '/'
             if fileName.lower() != 'index.html':
                 uri += Path(fileName).as_posix()
@@ -56,11 +58,10 @@ def createGzipHeaderFiles(fileName, contentType):
 
 
 def main():
-    # make files empty
-    with open(Headers_h, 'w') as f:
-        pass
-    with open(FileRoutings_inl, 'w') as f:
-        pass
+    # clear existing files
+    shutil.rmtree(str(Path(Headers_h).parent))
+
+    os.chdir(str(ReactAppDir))
 
     # html files
     for fileName in glob('**/*.html', recursive=True):
@@ -69,6 +70,22 @@ def main():
     # javascript files
     for fileName in glob('**/*.js', recursive=True):
         createGzipHeaderFiles(fileName, 'application/javascript')
+
+    # css files
+    for fileName in glob('**/*.css', recursive=True):
+        createGzipHeaderFiles(fileName, 'text/css')
+
+    # svg files
+    for fileName in glob('**/*.svg', recursive=True):
+        createGzipHeaderFiles(fileName, 'image/svg+xml')
+
+    # png files
+    for fileName in glob('**/*.png', recursive=True):
+        createGzipHeaderFiles(fileName, 'image/png')
+
+    # ico files
+    for fileName in glob('**/*.ico', recursive=True):
+        createGzipHeaderFiles(fileName, 'image/x-icon')
 
 
 if __name__ == "__main__":
