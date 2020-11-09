@@ -14,15 +14,15 @@ def createGzipHeaderFiles(fileName, contentType):
     # gzip file
     gzipFileName = fileName + '.gz'
     with open(fileName, 'rb') as f_in:
-        with gzip.open(gzipFileName, 'wb', compresslevel=9) as f_out:
-            shutil.copyfileobj(f_in, f_out)
+        with open(gzipFileName, 'wb') as f_out:
+            f_out.write(gzip.compress(f_in.read(), compresslevel=9, mtime=0))
 
     # build a C byte array from gzip compressed file
     headerFileName = fileName + '.h'
     headerPathAbs = Headers_h.parent / headerFileName
     headerPathAbs.parent.mkdir(parents=True, exist_ok=True)
     with open(gzipFileName, 'rb') as f_in:
-        with open(str(headerPathAbs), 'w') as f_out:
+        with open(headerPathAbs, 'w') as f_out:
             ba = bytearray(f_in.read())
 
             fileVarName = re.compile('[^a-zA-Z0-9]').sub('_', fileName).upper()
@@ -50,7 +50,7 @@ def createGzipHeaderFiles(fileName, contentType):
 
     # add include to new created header file
     with open(Headers_h, 'a') as f:
-        f.write(f'#include "{str(Path(headerFileName).as_posix())}"\n')
+        f.write(f'#include "{Path(headerFileName).as_posix()}"\n')
 
     # add file routing macro
     with open(FileRoutings_inl, 'a') as f:
@@ -59,9 +59,10 @@ def createGzipHeaderFiles(fileName, contentType):
 
 def main():
     # clear existing files
-    shutil.rmtree(str(Path(Headers_h).parent))
+    if Headers_h.parent.exists():
+        shutil.rmtree(Headers_h.parent)
 
-    os.chdir(str(ReactAppDir))
+    os.chdir(ReactAppDir)
 
     # html files
     for fileName in glob('**/*.html', recursive=True):
