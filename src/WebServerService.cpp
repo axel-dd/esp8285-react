@@ -1,6 +1,6 @@
 #include <ESPAsyncWebServer.h>
 #include "WebServerService.h"
-#include "WebServerFiles/Headers.h"
+#include "www/FileIncludes.h"
 
 #define FILE_ROUTING(FILE) \
 server.on(FILE##_URI, HTTP_GET, [&](AsyncWebServerRequest *request) \
@@ -14,7 +14,7 @@ AsyncWebServer server(80);
 
 void WebServerService::begin()
 {
-  #include "WebServerFiles/FileRoutings.inl"
+  #include "www/FileRoutings.inl"
 
   server.onNotFound([](AsyncWebServerRequest *request)
   {
