@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from glob import glob
 import os
+import sys
 import gzip
 import shutil
 from pathlib import Path
@@ -87,20 +88,20 @@ def createCppCode(fileName):
 
 # we want to stay compatible with esp8285 1MB flash layout used by Tasmota firmware
 # so we can't use a filesystem partition
-# we need to embed the reactjs app into the firmware flash
-# this script create C++ source code from each file in repo-root/www/build
+# we need to embed the javascript app into the firmware flash
+# this script create C++ source code from each file in repo-root/www/dist
 def main():
-    global ReactAppDir, WwwCppDir
+    global WwwAppDir, WwwCppDir
 
-    ReactAppDir = Path('../www/build').resolve()
-    WwwCppDir = Path('../src/www').resolve()
+    WwwAppDir = (Path(sys.argv[0]).parent.parent / 'www/dist').resolve()
+    WwwCppDir = (Path(sys.argv[0]).parent.parent / 'src/www').resolve()
 
     # clear existing files
     if WwwCppDir.exists():
         shutil.rmtree(WwwCppDir)
 
-    # change to react app directory
-    os.chdir(ReactAppDir)
+    # change to the javascript app directory
+    os.chdir(WwwAppDir)
 
     # create cpp code from all files in repo-root/www
     # to repo-root/src/www
